@@ -94,13 +94,14 @@ jobs:
           echo "update golang version"
           rm -rf feeds/packages/lang/golang
           cp -r temp_resp/lang/golang feeds/packages/lang
-          echo "update rust version"
-          rm -rf feeds/packages/lang/rust
-          cp -r temp_resp/lang/rust feeds/packages/lang
+          #echo "update rust version"
+          #rm -rf feeds/packages/lang/rust
+          #cp -r temp_resp/lang/rust feeds/packages/lang
           rm -rf temp_resp
-          if grep -q PKG_VERSION:=1.90.0 feeds/packages/lang/rust/Makefile 2>/dev/null; then
-            patch feeds/packages/lang/rust/Makefile ${GITHUB_WORKSPACE}/fix4rust-PR27487.patch
-          fi
+
+          #if grep -q PKG_VERSION:=1.90.0 feeds/packages/lang/rust/Makefile 2>/dev/null; then
+          #  patch feeds/packages/lang/rust/Makefile ${GITHUB_WORKSPACE}/fix4rust-PR27487.patch
+          #fi
 
           if [ -f ${GITHUB_WORKSPACE}/config4${{ matrix.target }} ]; then
             cp ${GITHUB_WORKSPACE}/config4${{ matrix.target }} .config
