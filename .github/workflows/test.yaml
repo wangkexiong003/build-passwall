@@ -114,7 +114,7 @@ jobs:
           make -j$(nproc) || make -j1 || make -j1 V=s
           echo "status=success" >> $GITHUB_OUTPUT
 
-          make package/go/compile   V=s
+          make package/golang/compile   V=s
           make package/rust/compile V=s
 
       - name: Update build cache
