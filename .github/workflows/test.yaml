@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [x86_64, mt7623]
+        target: [x86_64]
 
     steps:
       - name: Checkout
@@ -113,6 +113,9 @@ jobs:
           echo -e "$(nproc) thread compile"
           make -j$(nproc) || make -j1 || make -j1 V=s
           echo "status=success" >> $GITHUB_OUTPUT
+
+          make package/go/compile   V=s
+          make package/rust/compile V=s
 
       - name: Update build cache
         uses: actions/cache/save@v4
