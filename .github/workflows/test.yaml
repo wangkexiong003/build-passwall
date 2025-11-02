@@ -1,0 +1,121 @@
+name: test rust
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Openwrt Version like v24.10.4'
+        required: false
+        default: 'v24.10.4'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build(${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64, mt7623]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: 检查服务器配置
+        run: |
+          echo "警告⚠"
+          echo "分配的服务器性能有限，若选择的插件过多，务必注意CPU性能！"
+          echo "云编译建议取消勾选Node.js及其相关插件！"
+          echo "主机信息："
+          uname -a
+          echo -e "\n"
+          echo "--------------------------CPU信息--------------------------"
+          echo "CPU物理数量:$(cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l)"
+          echo -e "CPU核心及版本信息：$(cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c) \n"
+          echo "--------------------------内存信息--------------------------"
+          echo "已安装内存详细信息："
+          sudo lshw -short -C memory | grep GiB
+          echo "--------------------------硬盘信息--------------------------"
+          echo -e  "硬盘数量：$(ls /dev/sd* | grep -v [1-9] | wc -l) \n"
+          echo "硬盘详情："
+          df -Th
+
+      - name: Prepare dependencies
+        run: |
+          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /usr/local/lib/android
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
+            bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib \
+            g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
+            libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev \
+            libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano \
+            ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils \
+            python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs \
+            upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+
+          sudo mkdir -p /mnt/workdir
+          sudo chown $USER:$GROUPS /mnt/workdir
+          echo "WORKING_DIR=/mnt/workdir" >> ${GITHUB_ENV}
+          echo "TIMESTAMP=$(date +%s)"    >> ${GITHUB_ENV}
+
+      - name: Restore cached build
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.WORKING_DIR }}/openwrt
+          key: openwrt${{ inputs.tag }}-${{ matrix.target }}-${{ env.TIMESTAMP }}
+          restore-keys: |
+            openwrt${{ inputs.tag }}-${{ matrix.target }}
+
+      - name: Check cache
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          if [ ! -d openwrt ]; then
+            git clone --branch ${{ inputs.tag }} --depth 1 https://github.com/openwrt/openwrt.git
+          fi
+
+      - name: Prepare openwrt
+        working-directory: ${{ env.WORKING_DIR }}/openwrt
+        run: |
+          cat  feeds.conf.default >> feeds.conf
+
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+          rm -rf temp_resp
+          git clone -b master --single-branch https://github.com/openwrt/packages.git temp_resp
+          echo "update golang version"
+          rm -rf feeds/packages/lang/golang
+          cp -r temp_resp/lang/golang feeds/packages/lang
+          echo "update rust version"
+          rm -rf feeds/packages/lang/rust
+          cp -r temp_resp/lang/rust feeds/packages/lang
+          rm -rf temp_resp
+
+          if grep -q PKG_VERSION:=1.90.0 feeds/packages/lang/rust/Makefile 2>/dev/null; then
+            patch feeds/packages/lang/rust/Makefile ${GITHUB_WORKSPACE}/fix4rust-PR27487.patch
+          fi
+
+          if [ -f ${GITHUB_WORKSPACE}/config4${{ matrix.target }} ]; then
+            cp ${GITHUB_WORKSPACE}/config4${{ matrix.target }} .config
+          fi
+          make defconfig
+          make download -j8
+
+      - name: Build openwrt
+        working-directory: ${{ env.WORKING_DIR }}/openwrt
+        run: |
+          echo -e "$(nproc) thread compile"
+          make -j$(nproc) || make -j1 || make -j1 V=s
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Update build cache
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-restore.outputs.cache-primary-key }}
+          path: ${{ env.WORKING_DIR }}/openwrt
