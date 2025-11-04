@@ -62,14 +62,19 @@ jobs:
           restore-keys: |
             openwrt${{ inputs.tag }}-${{ matrix.target }}
 
-      - name: Restore openwrt ${{ inputs.tag }}
-        if: steps.cache-restore.outputs.cache-hit != 'true'
+      - name: Check cache existence
+        id: cache-check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          git clone --branch ${{ inputs.tag }} --depth 1 https://github.com/openwrt/openwrt.git
+          if [ -d openwrt ]; then
+            echo "cache-exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "cache-exists=false" >> $GITHUB_OUTPUT
+            git clone --branch ${{ inputs.tag }} --depth 1 https://github.com/openwrt/openwrt.git
+          fi
 
       - name: Restore openwrt feeds
-        if: steps.cache-restore.outputs.cache-hit != 'true'
+        if: steps.cache-check.outputs.cache-exists == 'false'
         working-directory: ${{ env.WORKING_DIR }}/openwrt
         run: |
           chmod +x ${GITHUB_WORKSPACE}/diy_part1.sh
