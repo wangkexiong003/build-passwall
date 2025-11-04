@@ -72,14 +72,14 @@ jobs:
         if: steps.cache-restore.outputs.cache-hit != 'true'
         working-directory: ${{ env.WORKING_DIR }}/openwrt
         run: |
-          chmod +x ${{ env.GITHUB_WORKSPACE }}/diy_part1.sh
-          ${{ env.GITHUB_WORKSPACE }}/diy_part1.sh
+          chmod +x ${GITHUB_WORKSPACE}/diy_part1.sh
+          ${GITHUB_WORKSPACE}/diy_part1.sh
 
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-          chmod +x ${{ env.GITHUB_WORKSPACE }}/diy_part2.sh
-          ${{ env.GITHUB_WORKSPACE }}/diy_part2.sh
+          chmod +x ${GITHUB_WORKSPACE}/diy_part2.sh
+          ${GITHUB_WORKSPACE}/diy_part2.sh
 
           if [ -f ${GITHUB_WORKSPACE}/config/${{ matrix.target }} ]; then
             cp ${GITHUB_WORKSPACE}/config/${{ matrix.target }} .config
