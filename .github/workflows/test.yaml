@@ -100,3 +100,10 @@ jobs:
         with:
           key: ${{ steps.cache-restore.outputs.cache-primary-key }}
           path: ${{ env.WORKING_DIR }}/openwrt
+
+      - name: Upload build cache
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt${{ inputs.tag }}-${{ matrix.target }}
+          path: |
+            ${{ env.WORKING_DIR }}/openwrt
