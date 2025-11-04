@@ -100,6 +100,11 @@ jobs:
           make -j$(nproc) || make -j1 || make -j1 V=s
           echo "status=success" >> $GITHUB_OUTPUT
 
+      - name: Prepare artifacts
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          tar -cvf openwrt${{ inputs.tag }}-${{ matrix.target }}.tar openwrt
+
       - name: Update build cache
         uses: actions/cache/save@v4
         with:
@@ -111,4 +116,4 @@ jobs:
         with:
           name: openwrt${{ inputs.tag }}-${{ matrix.target }}
           path: |
-            ${{ env.WORKING_DIR }}/openwrt
+            ${{ env.WORKING_DIR }}/*.tar
