@@ -103,7 +103,7 @@ jobs:
       - name: Prepare artifacts
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          tar -cvf openwrt${{ inputs.tag }}-${{ matrix.target }}.tar openwrt
+          tar -cvf openwrt${{ inputs.tag }}-${{ matrix.target }}.tar openwrt/{bin,.config}
 
       - name: Update build cache
         uses: actions/cache/save@v4
