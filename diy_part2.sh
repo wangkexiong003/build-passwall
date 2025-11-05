@@ -15,7 +15,7 @@ if [ -f feeds/packages/lang/rust/Makefile ]; then
   ## https://github.com/openwrt/packages/pull/27487
   # The scripts/patch-kernel.sh script will simply remove all files suffixed with .orig,
   # and it breaks rust's integrity check as these files actually come with upstream tarball.
-  if ! grep -q ^define Host/Patch feeds/packages/lang/rust/Makefile; then
+  if ! grep -q '^define Host/Patch' feeds/packages/lang/rust/Makefile; then
     patch feeds/packages/lang/rust/Makefile ${GITHUB_WORKSPACE}/patch/fix4rust-PR27487.patch
   fi
 
