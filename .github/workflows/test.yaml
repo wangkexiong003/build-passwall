@@ -87,6 +87,7 @@ jobs:
           ${GITHUB_WORKSPACE}/diy_part2.sh
 
           if [ -f ${GITHUB_WORKSPACE}/config/${{ matrix.target }} ]; then
+            echo "update .config"
             cp ${GITHUB_WORKSPACE}/config/${{ matrix.target }} .config
           fi
 
