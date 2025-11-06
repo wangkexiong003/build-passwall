@@ -83,13 +83,12 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-          chmod +x ${GITHUB_WORKSPACE}/diy_part2.sh
-          ${GITHUB_WORKSPACE}/diy_part2.sh
-
           if [ -f ${GITHUB_WORKSPACE}/config/${{ matrix.target }} ]; then
-            echo "update .config"
             cp ${GITHUB_WORKSPACE}/config/${{ matrix.target }} .config
           fi
+
+          chmod +x ${GITHUB_WORKSPACE}/diy_part2.sh
+          ${GITHUB_WORKSPACE}/diy_part2.sh
 
           make defconfig
           make download -j8
@@ -101,10 +100,18 @@ jobs:
           make -j$(nproc) || make -j1 || make -j1 V=s
           echo "status=success" >> $GITHUB_OUTPUT
 
-      - name: Prepare artifacts
-        working-directory: ${{ env.WORKING_DIR }}
+      - name: Build env check
+        if: {{ always() }}
+        working-directory: ${{ env.WORKING_DIR }}/openwrt
         run: |
-          tar -cvf openwrt${{ inputs.tag }}-${{ matrix.target }}.tar openwrt/{bin,.config}
+          df -hT
+
+      - name: Build env artifacts
+        if: {{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.tag }}-env
+          path: ${{ env.WORKING_DIR }}/openwrt/.config
 
       - name: Update build cache
         uses: actions/cache/save@v4
@@ -112,9 +119,9 @@ jobs:
           key: ${{ steps.cache-restore.outputs.cache-primary-key }}
           path: ${{ env.WORKING_DIR }}/openwrt
 
-      - name: Upload build cache
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: openwrt${{ inputs.tag }}-${{ matrix.target }}
           path: |
-            ${{ env.WORKING_DIR }}/*.tar
+            ${{ env.WORKING_DIR }}/openwrt/bin
