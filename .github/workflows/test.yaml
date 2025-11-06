@@ -112,6 +112,7 @@ jobs:
         with:
           name: ${{ inputs.tag }}-env
           path: ${{ env.WORKING_DIR }}/openwrt/.config
+          include-hidden-files: true
 
       - name: Update build cache
         uses: actions/cache/save@v4
