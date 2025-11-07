@@ -74,9 +74,9 @@ jobs:
           fi
 
       - name: Restore openwrt feeds
-        if: steps.cache-check.outputs.cache-exists == 'false'
         working-directory: ${{ env.WORKING_DIR }}/openwrt
         run: |
+          # update feeds
           chmod +x ${GITHUB_WORKSPACE}/diy_part1.sh
           ${GITHUB_WORKSPACE}/diy_part1.sh
 
@@ -87,18 +87,22 @@ jobs:
             cp ${GITHUB_WORKSPACE}/config/${{ matrix.target }} .config
           fi
 
-          chmod +x ${GITHUB_WORKSPACE}/diy_part2.sh
-          ${GITHUB_WORKSPACE}/diy_part2.sh
+          # custom packages after feeds (replacement)
+          if [ "${CACHE_EXISTS}" = "false" ]; then
+            chmod +x ${GITHUB_WORKSPACE}/diy_part2.sh
+            ${GITHUB_WORKSPACE}/diy_part2.sh
+          fi
 
           make defconfig
           make download -j8
+        env:
+          CACHE_EXISTS: ${{ steps.check_cache.outputs.cache-exists }}
 
       - name: Build openwrt
         working-directory: ${{ env.WORKING_DIR }}/openwrt
         run: |
           echo -e "$(nproc) thread compile"
           make -j$(nproc) || make -j1 || make -j1 V=s
-          echo "status=success" >> $GITHUB_OUTPUT
 
       - name: Build env check
         if: ${{ always() }}
