@@ -7,6 +7,10 @@ on:
         description: 'Openwrt Version like v24.10.4'
         required: false
         default: 'v24.10.4'
+      skipCache:
+        description: 'Skip Cache'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -55,6 +59,7 @@ jobs:
 
       - name: Restore cached build
         id: cache-restore
+        if: ${{ inputs.skipCache == 'false' }}
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.WORKING_DIR }}/openwrt
@@ -77,8 +82,8 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}/openwrt
         run: |
           # update feeds
-          chmod +x ${GITHUB_WORKSPACE}/diy_part1.sh
-          ${GITHUB_WORKSPACE}/diy_part1.sh
+          chmod +x ${GITHUB_WORKSPACE}/diy_feeds.sh
+          ${GITHUB_WORKSPACE}/diy_feeds.sh
 
           ./scripts/feeds update -a
           ./scripts/feeds install -a
@@ -87,10 +92,13 @@ jobs:
             cp ${GITHUB_WORKSPACE}/config/${{ matrix.target }} .config
           fi
 
-          # custom packages after feeds (replacement)
-          if [ "${CACHE_EXISTS}" = "false" ]; then
-            chmod +x ${GITHUB_WORKSPACE}/diy_part2.sh
-            ${GITHUB_WORKSPACE}/diy_part2.sh
+          chmod +x ${GITHUB_WORKSPACE}/diy_settings.sh
+          ${GITHUB_WORKSPACE}/diy_settings.sh
+
+          # custom building languages
+          if [[ "${CACHE_EXISTS}" == "false" ]]; then
+            chmod +x ${GITHUB_WORKSPACE}/update_languages.sh
+            ${GITHUB_WORKSPACE}/update_languages.sh
           fi
 
           make defconfig
@@ -114,7 +122,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.tag }}-env
+          name: ${{ matrix.target }}-env
           path: ${{ env.WORKING_DIR }}/openwrt/.config
           include-hidden-files: true
 
