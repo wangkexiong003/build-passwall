@@ -13,11 +13,6 @@ CONFIG_VHDX_IMAGES=n
 ## BASE PACKAGEs
 #
 CONFIG_PACKAGE_dnsmasq=n
-CONFIG_PACKAGE_luci=y
-CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
-CONFIG_PACKAGE_luci-i18n-admin-zh-cn=y
-CONFIG_PACKAGE_luci-i18n-firewall-zh-cn=y
-CONFIG_PACKAGE_luci-i18n-package-manager-zh-cn=y
 CONFIG_TARGET_ROOTFS_PARTSIZE=256
 
 ## passwall
