@@ -92,6 +92,9 @@ jobs:
             cp ${GITHUB_WORKSPACE}/config/${{ matrix.target }} .config
           fi
 
+          chmod +x ${GITHUB_WORKSPACE}/diy_settings.sh
+          ${GITHUB_WORKSPACE}/diy_settings.sh
+
           # custom building languages
           if [[ "${CACHE_EXISTS}" == "false" ]]; then
             chmod +x ${GITHUB_WORKSPACE}/update_languages.sh
@@ -99,10 +102,6 @@ jobs:
           fi
 
           make defconfig
-
-          chmod +x ${GITHUB_WORKSPACE}/diy_settings.sh
-          ${GITHUB_WORKSPACE}/diy_settings.sh
-
           make download -j8
         env:
           CACHE_EXISTS: ${{ steps.check_cache.outputs.cache-exists }}
